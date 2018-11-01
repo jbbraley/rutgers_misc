@@ -1,0 +1,15 @@
+[cRIO-REF1]
+cRIO-REF1 = "169.254.62.201"
+
+[cRIO-REF2]
+cRIO-REF2 = "169.254.62.202"
+
+[cRIO-REF3]
+cRIO-REF3 = "169.254.62.203"
+
+[cRIO-TRAILER1]
+cRIO-TRAILER1 = "169.254.62.105"
+
+[My Computer]
+My Computer = "192.168.1.40"
+
