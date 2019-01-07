@@ -1,0 +1,243 @@
+'Program to read 20Hz data from three CDM-VW305 devices (8x3=24 channels)
+
+'Make sure the CPI addresses given here
+'match those shown in DevConfig/DVWTool
+'for the intended CDM-VW300 series devices
+Const CPI_ADDR1 = 1  
+Const CPI_ADDR2 = 2
+'Define VW Gage Specifications (for 6" Geokon gauge)
+Const FreqL = 450
+Const FreqH = 1250
+'Define VW Strain Gage factors
+Const A=0.0014051
+Const B=0.0002369
+Const C=0.0000001019
+Const F2 = 4.062
+Const GF2 = 0.96
+Const Mult_S = F2*GF2/1000
+'Define default zero values
+Dim z1(8) = {1815.670522, 2959.20209, 1941.551245, 1761.631118, 2280.894265, 1641.470777, 3597.790267, 0}
+Dim z2(8) = {2426.594542, 2950.023547, 2254.340221, 1625.917623, 2369.039374, 3652.863174,  3204.235095, 0}
+
+' Dimension global variables
+Public Flag(4)
+Public VW_Strain(16,1)
+'Public Zero_manual(16) = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}  'initialize manual zero values 
+'Public Strain_manual(16)
+Units VW_Strain = Microstrain
+Public CDM1(8), CDM2(8)
+Public Event1(1)
+Public CDM1_Zero(8), CDM2_Zero(8)
+Public static1_zero(8), static2_zero(8)
+
+' Dimension all local variable used
+Dim I
+Dim Diag1(8), Diag2(8)
+Dim StaticCDM1(8,1), StaticCDM2(8,1)
+Dim Therm1(8), Therm2(8)  'Thermistor readings 
+Dim DynStdDev1(8), DynStdDev2(8)  'Dynamic Standard Deviations
+
+
+
+' Setup arrays of parameters for CDMConfig (3 CDM's)
+'                                 CH1    CH2    CH3    CH4    CH5    CH6    CH7    CH8
+'                                 ---    ---    ---    ---    ---    ---    ---    ---  
+'Setup for First Device
+Dim Enable1(8) As Long =       {     1,     1,     1,     1,     1,     1,     1,     1}
+Dim Max_AMP1(8) =              { 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002}
+Dim F_Low1(8) =                { FreqL, FreqL, FreqL, FreqL, FreqL, FreqL, FreqL, FreqL}
+Dim F_High1(8) =               { FreqH, FreqH, FreqH, FreqH, FreqH, FreqH, FreqH, FreqH}
+Dim OutForm1(8) As Long =      {     1,     1,     1,     1,     1,     1,     1,     1}
+Dim Mult1(8) =                 {Mult_S,Mult_S,Mult_S,Mult_S,Mult_S,Mult_S,Mult_S,Mult_S}
+Dim Off1(8) =                  {   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0}
+Dim SteinA1(8) =               {     A,     A,     A,     A,     A,     A,     A,     A}
+Dim SteinB1(8) =               {     B,     B,     B,     B,     B,     B,     B,     B}
+Dim SteinC1(8) =               {     C,     C,     C,     C,     C,     C,     C,     C}
+
+'Setup for Second Device
+Dim Enable2(8) As Long =       {     1,     1,     1,     1,     1,     1,     1,     1}
+Dim Max_AMP2(8) =              { 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002}
+Dim F_Low2(8) =                { FreqL, FreqL, FreqL, FreqL, FreqL, FreqL, FreqL, FreqL}
+Dim F_High2(8) =               { FreqH, FreqH, FreqH, FreqH, FreqH, FreqH, FreqH, FreqH}
+Dim OutForm2(8) As Long =      {     1,     1,     1,     1,     1,     1,     1,     1}
+Dim Mult2(8) =                 {Mult_S,Mult_S,Mult_S,Mult_S,Mult_S,Mult_S,Mult_S,Mult_S}
+Dim Off2(8) =                  {   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0}
+Dim SteinA2(8) =               {     A,     A,     A,     A,     A,     A,     A,     A}
+Dim SteinB2(8) =               {     B,     B,     B,     B,     B,     B,     B,     B}
+Dim SteinC2(8) =              {     C,     C,     C,     C,     C,     C,     C,     C}
+
+'Shared Rainflow configuration (not used, but required as configuration arguments)
+Dim RFMB(8) As Long =         {    20,    20,    20,    20,    20,    20,    20,    20}
+Dim RFAB(8) As Long =         {    20,    20,    20,    20,    20,    20,    20,    20}
+Dim RFLL(8) =                 { 400.0, 400.0, 400.0, 400.0, 400.0, 400.0, 400.0, 400.0}
+Dim RFHL(8) =                 {4000.0,4000.0,4000.0,4000.0,4000.0,4000.0,4000.0,4000.0}
+Dim RFHY(8) =                 { 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005}
+Dim RFOF(8) As Long =         {   100,   100,   100,   100,   100,   100,   100,   100}
+
+'Configure First Device
+CDM_VW300Config(1,CPI_ADDR1,0,Enable1(),Max_AMP1(),F_Low1(),F_High1(), _
+OutForm1(),Mult1(),Off1(), SteinA1(),SteinB1(),SteinC1(), _
+RFMB(),RFAB(),RFLL(),RFHL(),RFHY(),RFOF())
+'Configure Second Device
+CDM_VW300Config(1,CPI_ADDR2,0,Enable2(),Max_AMP2(),F_Low2(),F_High2(), _
+OutForm2(),Mult2(),Off2(), SteinA2(),SteinB2(),SteinC2(), _
+RFMB(),RFAB(),RFLL(),RFHL(),RFHY(),RFOF())
+
+ 'Array to hold all the data coming from the PS200/CH200
+Public CH200_M0(9)
+ 'Alias names for array elements.
+ 'Battery voltage: VDC
+Alias CH200_M0(1)=VBatt
+ 'Current going into, or out of, the battery: Amps
+Alias CH200_M0(2)=IBatt
+ 'Current going to the load: Amps
+Alias CH200_M0(3)=ILoad
+ 'Voltage coming into the charger: VDC
+Alias CH200_M0(4)=V_in_chg
+ 'Current coming into the charger: Amps
+Alias CH200_M0(5)=I_in_chg
+ 'Charger temperature: Celsius
+Alias CH200_M0(6)=Chg_TmpC
+ 'Charging state: Cycle, Float, Current Limited, or None
+Alias CH200_M0(7)=Chg_State
+ 'Charging source: None, AC, or Solar
+Alias CH200_M0(8)=Chg_Source
+ 'Check battery error: 0=normal, 1=check battery
+Alias CH200_M0(9)=Ck_Batt
+ 'Arrays to hold the associated words for the charge state, charge source,
+ 'and check battery values.
+Dim ChargeStateArr(6) As String
+Dim ChargeSourceArr(3) As String 
+Dim CheckBatteryArr(2) As String
+ 'Variables to hold the words for charge state, charge source, and check
+ 'battery.
+Public ChargeState As String
+Public ChargeSource As String
+Public CheckBattery As String
+ 'Stored hourly data.
+DataTable (Charge_Diagnostics,1,-1)
+ TableFile("CRD:CH200_data_",64,-1,0,2,Hr,0,0)
+ DataInterval (0,10,Min,10)
+ Minimum (6,CH200_M0(),FP2,0,False)
+ Maximum (6,CH200_M0(),FP2,False,False)
+EndTable 
+
+'Define VW tables
+DataTable(Strain,-1,-1)
+  DataInterval(0,0,msec,0)
+  Sample(16,VW_Strain,IEEE4)
+  Sample(1,Event1,Boolean)
+  TableFile("CRD:20Hz_strain_data_",64,-1,0,2,Hr,0,0)
+EndTable
+
+DataTable(VW_Static,-1,-1)
+  DataInterval(0,1,sec,0)
+  Sample (8,StaticCDM1(),IEEE4)
+  Sample (8,StaticCDM2(),IEEE4)
+  Sample (8,Therm1,IEEE4)
+  Sample (8,Therm2,IEEE4)
+  TableFile("CRD:VW_static_data_",64,-1,0,2,Hr,0,0)
+  'CardOut (0 ,3600)
+EndTable
+
+DataTable(VW_Bkup,-1,-1)
+  DataInterval(0,0,msec,0)
+  Sample(8,CDM1(),Ieee4)
+  Sample(8,CDM2(),ieee4)
+  TableFile("CRD:backup_data_",64,-1,0,2,Hr,0,0)
+EndTable
+
+'' --------------------Begin program for gathering data----------------- ''
+'_________________________________________________________________________'
+BeginProg
+  'Load arrays with words to associate with the charge state, charge source
+   'and check battery values from the PS/CH200.
+   ChargeStateArr(1) = "Regulator Fault"
+   ChargeStateArr(2) = "No Charge"
+   ChargeStateArr(3) = "Current Limited"
+   ChargeStateArr(4) = "Cycle Charging"
+   ChargeStateArr(5) = "Float Charging"
+   ChargeStateArr(6) = "Battery Test"
+  
+   ChargeSourceArr(1) = "None"
+   ChargeSourceArr(2) = "Solar"
+   ChargeSourceArr(3) = "Continuous"
+  
+   CheckBatteryArr(1) = "Normal"
+   CheckBatteryArr(2) = "Check Battery"   
+
+  '20 Hz/50msec scan rate
+  Scan(50,msec,5000,0)
+    ' Scan CDM's
+    CDM_VW300Dynamic(CPI_ADDR1,CDM1(),Diag1())
+    CDM_VW300Dynamic(CPI_ADDR2,CDM2(),Diag2())
+    
+    If TimeIntoInterval(0,1,Sec) Then
+      CDM_VW300Static(CPI_ADDR1,StaticCDM1(), Therm1(), DynStdDev1())
+      CDM_VW300Static(CPI_ADDR2,StaticCDM2(), Therm2(), DynStdDev2())
+      'Adjust static values by zeroing value
+      For I = 1 To 8
+        static1_zero(I)=StaticCDM1(I)-CDM1_Zero(I)
+        static2_zero(I)=StaticCDM2(I)-CDM2_Zero(I)
+      Next I        
+      CallTable (VW_Static)
+    EndIf
+    
+    ' Grab current values for zeroing (if specified by flag)
+    If Flag(1) = True Then
+      For I = 1 To 8
+        CDM1_Zero(I)=StaticCDM1(I)
+        CDM2_Zero(I)=StaticCDM2(I)
+      Next I
+      Flag(1) = False
+    EndIf
+    
+    'Grab Default Values for zeroing
+    If Flag(3) = True Then
+      For I = 1 To 8
+        CDM1_Zero(I) = z1(I)
+        CDM2_Zero(I) = z2(I)
+      Next I
+      Flag(3) = False
+    EndIf 
+    
+    'Reset zeroing values to zero
+    If Flag(4) = True Then
+      For I = 1 To 8
+        CDM1_Zero(I) = 0
+        CDM2_Zero(I) = 0
+      Next I
+      Flag(4) = False
+    EndIf 
+    'Adjust raw values by zeroing value
+    For I = 1 To 8
+      VW_Strain(I)=CDM1(I)-CDM1_Zero(I)
+      'Strain_manual(I) = CDM1(I)-Zero_manual(I)
+      VW_Strain(I+8)=CDM2(I)-CDM2_Zero(I)
+      'Strain_manual(I+8) = CDM2(I)-Zero_manual(I+8)
+    Next I
+    
+    Event1 = Flag(2)
+    ' Save data to tables
+    CallTable Strain
+    CallTable (VW_Bkup)    
+
+  NextScan
+  'SlowSequence with SDI-12 measurements
+ SlowSequence
+ Scan(30,sec,0,0)
+ SDI12Recorder (CH200_M0(),C1,0,"MC!",1.0,0)
+ 'Array values start with one. Values for charge state start with -1.
+ 'Have to shift the value by two to line it up with the correct words
+ 'in the array.
+ ChargeState = ChargeStateArr(Chg_State + 2)
+ 'Values for charge source start with zero. Have to shift the value
+ 'by one to line it up with the correct words in the array.
+ ChargeSource = ChargeSourceArr(Chg_Source + 1)
+ 'Values for check battery start with zero. Have to shift the value
+ 'by one to line it up with the correct words in the array.
+ CheckBattery = CheckBatteryArr(Ck_Batt + 1)
+ CallTable (Charge_Diagnostics)
+ NextScan    
+  
+EndProg

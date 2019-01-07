@@ -1,0 +1,20 @@
+
+
+
+Channel No, Cable No, Gauge Location
+Beam 16:
+CDM1-1, 12, quarter,flange
+CDM1-2, 13, quarter,flange
+CDM1-3, 14, quarter,bot_web
+CDM1-4, 10, mid,flange
+CDM1-5, 15, mid,flange
+CDM1-6, 11, mid,bot_web
+CDM1-7, 5, mid,top_web
+Beam 18:
+CDM2-1, 7, quarter,flange
+CDM2-2, 1, quarter,flange
+CDM2-3, 6, quarter,bot_web
+CDM2-4, 2, mid,flange
+CDM2-5, 8, mid,flange
+CDM2-6, 3, mid,bot_web
+CDM2-7, 9, mid,top_web

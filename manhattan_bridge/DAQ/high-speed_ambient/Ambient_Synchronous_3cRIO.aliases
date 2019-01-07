@@ -11,5 +11,5 @@ cRIO-REF3 = "169.254.62.215"
 cRIO-TRAILER1 = "169.254.62.105"
 
 [My Computer]
-My Computer = "172.16.10.192"
+My Computer = "192.168.1.103"
 

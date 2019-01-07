@@ -127,7 +127,9 @@ DirectoryIndex index.htm
 		<Property Name="target.webservices.SecurityAPIKey" Type="Str">PqVr/ifkAQh+lVrdPIykXlFvg12GhhQFR8H9cUhphgg=:pTe9HRlQuMfJxAG6QCGq7UvoUpJzAzWGKy5SbZ+roSU=</Property>
 		<Property Name="target.webservices.ValidTimestampWindow" Type="Int">15</Property>
 		<Item Name="MAIN - Acquire Data.vi" Type="VI" URL="../MAIN - Acquire Data.vi"/>
+		<Item Name="MAIN - Acquire Data2.vi" Type="VI" URL="../MAIN - Acquire Data2.vi"/>
 		<Item Name="DAQ - 4-7 Modules - SubVI.vi" Type="VI" URL="../SubVIs/DAQ - 4-7 Modules - SubVI.vi"/>
+		<Item Name="DAQ - 3-7 Modules - SubVI.vi" Type="VI" URL="../SubVIs/DAQ - 3-7 Modules - SubVI.vi"/>
 		<Item Name="DAQ - 1 Module - SubVI.vi" Type="VI" URL="../SubVIs/DAQ - 1 Module - SubVI.vi"/>
 		<Item Name="Chassis" Type="cRIO Chassis">
 			<Property Name="crio.ProgrammingMode" Type="Str">express</Property>
