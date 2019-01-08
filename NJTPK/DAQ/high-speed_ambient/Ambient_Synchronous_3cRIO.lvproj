@@ -979,7 +979,7 @@ InactivityTimeout 60
 			</Item>
 			<Item Name="HandleFileSize.vi" Type="VI" URL="../Sub VIs/HandleFileSize.vi"/>
 			<Item Name="StoreBinary_Local.vi" Type="VI" URL="../Sub VIs/StoreBinary_Local.vi"/>
-			<Item Name="AmbientSynchrono_FPGATarget2_Target-REF1-mod4-7.lvbitx" Type="Document" URL="../FPGA Bitfiles/REF1 - 4 Modules/AmbientSynchrono_FPGATarget2_Target-REF1-mod4-7.lvbitx"/>
+			<Item Name="AmbientSynchrono_FPGATarget2_Target-REF1-mod6-7.lvbitx" Type="Document" URL="../FPGA Bitfiles/REF1 - 2 Modules/AmbientSynchrono_FPGATarget2_Target-REF1-mod6-7.lvbitx"/>
 		</Item>
 		<Item Name="Build Specifications" Type="Build"/>
 	</Item>
