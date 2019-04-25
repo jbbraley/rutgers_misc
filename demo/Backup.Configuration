@@ -1,0 +1,6 @@
+[Localhost]
+IncludeTableFiles=1
+IncludeIniFiles=1
+BackupFilename=C:\Campbellsci\LoggerNet\LoggerNet.bkp
+RestoreFilename=C:\Campbellsci\LoggerNet\LoggerNet.bkp
+FileList=
