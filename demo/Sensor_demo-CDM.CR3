@@ -1,0 +1,148 @@
+'CR3000 Series Datalogger
+
+'For programming tips, copy this address to your browser
+'search window:https://www.campbellsci.com/videos/datalogger-programming
+
+'Program author: John Braley
+
+'Declare Constants
+'  CONSTANTS
+'  Define all constants used within program (channel counts, gage factors, etc.)
+Const CPI_ADDR = 1
+Const BFreq6 = 450             ' Begin Frequency for 6" VW gage
+Const EFreq6 = 1250            ' End Frequency for 6" VW gage
+Const A=0.0014051              ' Temperature conversion constant A
+Const B=.0002369               ' Temperature conversion constant B
+Const C=.0000001019            ' Temperature conversion constant C
+Const F6 = 4.062               ' Strain conversion factor for 6" gage
+Const GF6 = .96                ' Gage factor for 6" gage
+Const Mult_S = F6*GF6/1000
+Const SR = 50                 ' Sampling Rate in seconds (sensors) 
+Const SR2 = 100
+'Define VW Tilt Meter Factors
+Const FreqLT = 1400
+Const FreqHT = 3500
+Const GF_T2 = 0.0024        'Newer tilt gage
+Const Mult_T2 = GF_T2/1000
+'Rebar strain gauge factors
+Const BFreqR = 1400
+Const EFreqR = 3200
+Const GF_R = 0.347
+Const Mult_SR = GF_R/1000
+' String pot factors
+Const Disp_Rep = 1
+Const Disp_F1 = .0005*2 'Factor for 0..10V output range (Note: The sensor will only be capable of measuring up to 2.5" Displacememnt
+' TML gauge factor
+Const TML_F1 = 2030/500/12*0.0393701
+
+' Dimension Local Variables
+Dim CDM1_Zero(3)
+Dim Disp_Zero(2)
+Dim I  'Looping index
+Dim Diag(8)
+Dim Therm(8)
+Dim DynStdDev(8)
+
+' set up cdm parameters
+Dim Enable1(8) As Long =       {     1,     1,     1,     0,     0,     0,     0,     0}
+Dim Max_AMP1(8) =              { 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002}
+Dim F_Low1(8) =                { BFreq6,  BFreqR,   FreqLT,   BFreq6,   BFreq6,   BFreq6,   BFreq6,   BFreq6}
+Dim F_High1(8) =               { EFreq6,  EFreqR,  FreqHT,  EFreq6,  EFreq6,  EFreq6,  EFreq6,  EFreq6}
+Dim OutForm1(8) As Long =      {     1,     1,     1,     1,     1,     1,     1,     1}
+Dim Mult1(8) =                 {Mult_S,Mult_SR,Mult_T2,Mult_S,Mult_S,Mult_S,Mult_S,Mult_S}
+Dim Off1(8) =                  {   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0}
+Dim SteinA1(8) =               {     A,     A,     A,     A,     A,     A,     A,     A}
+Dim SteinB1(8) =               {     B,     B,     B,     B,     B,     B,     B,     B}
+Dim SteinC1(8) =               {     C,     C,     C,     C,     C,     C,     C,     C}
+
+Dim RFMB(8) As Long =          {    20,    20,    20,    20,    20,    20,    20,    20}
+Dim RFAB(8) As Long =          {    20,    20,    20,    20,    20,    20,    20,    20}
+Dim RFLL(8) =                  { 400.0, 400.0, 400.0, 400.0, 400.0, 400.0, 400.0, 400.0}
+Dim RFHL(8) =                  {4000.0,4000.0,4000.0,4000.0,4000.0,4000.0,4000.0,4000.0}
+Dim RFHY(8) =                  { 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005}
+Dim RFOF(8) As Long =          {   100,   100,   100,   100,   100,   100,   100,   100}
+
+CDM_VW300Config(1,CPI_ADDR,0,Enable1(),Max_AMP1(),F_Low1(),F_High1(), _
+OutForm1(),Mult1(),Off1(),SteinA1(),SteinB1(),SteinC1(), _
+RFMB(),RFAB(),RFLL(),RFHL(),RFHY(),RFOF())
+
+'Declare Public Variables
+Public Flag(2)
+Public CDM1(8)
+Public StaticCDM1(8)
+Public VW_Strain
+Public Rebar_Strain
+Public VW_Tilt 
+Public DispSP(Disp_Rep) 'String Pot Readings
+Public DispTML
+Public V_raw
+Public String_Pot
+Public TML
+
+' Set units
+Units String_Pot = inches
+Units VW_Strain = strain
+Units VW_Tilt = degrees
+Units TML = inches
+
+'Define Data Tables.
+'DataTable (VW_Backup,1,-1)
+ ' DataInterval (0,0,Sec,10)
+  'Sample (1,DispSP,IEEE4)
+  'Sample (1,DispTML,IEEE4)
+' EndTable
+' 
+'DataTable (VW,1,-1)
+'  DataInterval (0,0,Sec,10)
+'  Sample (1,String_Pot,IEEE4)
+'  Sample (1,TML,IEEE4)
+'EndTable
+
+'Main Program
+BeginProg
+  Scan(SR,msec,100,0) 
+     CDM_VW300Dynamic(CPI_ADDR,CDM1(),Diag())
+     
+      If TimeIntoInterval(0,1,Sec) Then
+        CDM_VW300Static(CPI_ADDR,StaticCDM1(), Therm(), DynStdDev())
+      EndIf
+  
+      VW_Strain = CDM1(1)-CDM1_Zero(1)
+      Rebar_Strain = CDM1(2)-CDM1_Zero(2)
+      VW_Tilt = CDM1(3)-CDM1_Zero(3)
+   NextScan
+SlowSequence
+     Scan(SR2,msec,10,0)
+   ' DISPLACEMENT READINGS
+     'Sample Single Ended Voltage
+     VoltSe (DispSP,Disp_Rep,mV5000,1,1,0,_60Hz,Disp_F1,0)
+     
+  'TML READINGS
+  'Sample Double Ended Voltage  
+     VoltDiff (V_raw,1,mV200,2,1,0,_60Hz,1,0)
+     DispTML = V_raw*TML_F1
+     
+' Zeroing Routine
+      If Flag(1) = True Then
+          Disp_Zero(1)= DispSP
+          Disp_Zero(2)= DispTML
+        For I = 1 To 3
+          CDM1_Zero(I)=StaticCDM1(I)
+        Next I
+        Flag(1)=False
+      EndIf
+      
+      If Flag(2) = True Then
+        Disp_Zero(1)= 0
+        Disp_Zero(2)= 0
+        For I = 1 To 3
+          CDM1_Zero(I)=0
+        Next I
+        Flag(2)=False
+      EndIf
+      
+      String_Pot = DispSP-Disp_Zero(1)
+      TML = DispTML-Disp_Zero(2)
+NextScan
+EndProg
+
